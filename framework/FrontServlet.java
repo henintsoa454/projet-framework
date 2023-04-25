@@ -8,12 +8,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import etu1923.framework.Mapping;
+import etu1923.framework.ModelView;
 
 public class FrontServlet extends HttpServlet{
 	HashMap<String, Mapping> mappingUrls;
@@ -84,13 +86,26 @@ public class FrontServlet extends HttpServlet{
             if(request.getParameter("doList") != null){
                 doList = request.getParameter("doList");
             }
-        	if(doList.compareTo("true") == 0){
                 out.println(this.getMappingUrls());
                 for (String key : this.getMappingUrls().keySet()) {
                     Mapping mapping = this.getMappingUrls().get(key);
                     out.println("Url:"+key+" ClassName:"+mapping.getClassName()+" Method:"+mapping.getMethod());
                 }
-            }         
+                
+                String urlString = request.getRequestURI().substring(request.getContextPath().length());
+                out.println("URLSTRING: "+urlString);
+                if(this.getMappingUrls().containsKey(urlString)) {
+                	Mapping mapping = this.getMappingUrls().get(urlString);
+                	Class clazz = Class.forName(mapping.getClassName());
+                	Method method = clazz.getDeclaredMethod(mapping.getMethod());
+                	Object object = clazz.getConstructor().newInstance();
+                	Object returnObject = method.invoke(object,(Object[])null);
+                	if(returnObject instanceof ModelView) {
+                		ModelView modelView = (ModelView) returnObject;
+                		RequestDispatcher requestDispatcher = request.getRequestDispatcher(modelView.getUrl());
+                		requestDispatcher.forward(request, response);
+                	}
+                }        
         }
         catch (Exception e) {
             e.printStackTrace();
