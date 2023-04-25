@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.Calendar;
 
 import etu1923.framework.annotation.AppRoute;
+import etu1923.framework.ModelView;
 
 public class Emp {
 	String nom;
@@ -46,6 +47,10 @@ public class Emp {
 		calendar2.setTime(nowDate);
 		
 		return calendar2.get(Calendar.YEAR) - calendar.get(Calendar.YEAR);
+	}
+	@AppRoute(url = "/emp-getAll")
+	public ModelView getAllEmp(){
+		return new ModelView("TongaSoa.jsp");
 	}
 	
 }
