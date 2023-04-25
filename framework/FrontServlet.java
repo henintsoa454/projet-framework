@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -25,15 +26,18 @@ public class FrontServlet extends HttpServlet{
 		this.mappingUrls = mappingUrls;
 	}
 	
-	public static ArrayList<Class<?>> checkClasses(File directory, String packageName) throws ClassNotFoundException {
+	public static ArrayList<Class<?>> checkClasses(File directory, String packageName) throws Exception {
         ArrayList<Class<?>> classes = new ArrayList<>();
-        if (!directory.exists()) {
-            return classes;
-        }
+        // if (!directory.exists()) {
+        //     return classes;
+        // }
+		String path = packageName.replaceAll("[.]","/");
+		URL packageUrl = Thread.currentThread().getContextClassLoader().getResource(path);
+		directory = new File(packageUrl.toURI());
         File[] files = directory.listFiles();
         for (File file : files) {
             if (file.isDirectory()) {
-                classes.addAll(checkClasses(file, packageName + "." + file.getName()));
+                classes.addAll(checkClasses( file , packageName + "." + file.getName() ));
             } else if (file.getName().endsWith(".class")) {
                 String className = packageName + "." + file.getName().substring(0, file.getName().length() - 6);
                 Class<?> clazz = Class.forName(className);
@@ -49,6 +53,7 @@ public class FrontServlet extends HttpServlet{
 	        try{
 	            f = new File("../webapps/Framework/WEB-INF/classes/etu1923");
 	            ArrayList<Class<?>> classes = FrontServlet.checkClasses(f,"etu1923");
+                this.setMappingUrls(new HashMap<>());
 	            for(int i = 0;i<classes.size();i++){
 	                Class<?> classe = classes.get(i);
 	                Method[] methods = classe.getDeclaredMethods();
@@ -74,7 +79,18 @@ public class FrontServlet extends HttpServlet{
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {     
         	String url = request.getRequestURL().toString()+"?"+request.getQueryString();
-        	out.println("URL: "+url);            
+        	out.println("URL: "+url);   
+			String doList = "";
+            if(request.getParameter("doList") != null){
+                doList = request.getParameter("doList");
+            }
+        	if(doList.compareTo("true") == 0){
+                out.println(this.getMappingUrls());
+                for (String key : this.getMappingUrls().keySet()) {
+                    Mapping mapping = this.getMappingUrls().get(key);
+                    out.println("Url:"+key+" ClassName:"+mapping.getClassName()+" Method:"+mapping.getMethod());
+                }
+            }         
         }
         catch (Exception e) {
             e.printStackTrace();
