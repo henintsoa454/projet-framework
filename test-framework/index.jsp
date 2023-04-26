@@ -9,9 +9,9 @@
         </head>
 
         <body>
-            <p><a href="test?id=1">Click here </a>to redirect to another page</p>
+            <p><a href="frontservlet?id=1">Click here </a>to redirect to another page</p>
             <p>
-                <a href="test?doList=true">Click here to list all method with the annotation</a>
+                <a href="frontservlet?doList=true">Click here to list all method with the annotation</a>
             </p>
         </body>
 
