@@ -50,7 +50,10 @@ public class Emp {
 	}
 	@AppRoute(url = "/emp-getAll")
 	public ModelView getAllEmp(){
-		return new ModelView("TongaSoa.jsp");
+		ModelView modelView = new ModelView("TongaSoa.jsp");
+		String testData = "Mande";
+		modelView.addItem("test", testData);
+		return modelView;
 	}
 	
 }
