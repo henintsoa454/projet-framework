@@ -81,7 +81,7 @@ public class FrontServlet extends HttpServlet{
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {     
         	String url = request.getRequestURL().toString()+"?"+request.getQueryString();
-        	out.println("URL: "+url);   
+        	out.println("Url: "+url);   
 			String doList = "";
             if(request.getParameter("doList") != null){
                 doList = request.getParameter("doList");
