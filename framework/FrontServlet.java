@@ -102,6 +102,10 @@ public class FrontServlet extends HttpServlet{
                 	Object returnObject = method.invoke(object,(Object[])null);
                 	if(returnObject instanceof ModelView) {
                 		ModelView modelView = (ModelView) returnObject;
+                		HashMap<String, Object> data = modelView.getData();
+                		for (String key : data.keySet()) {
+							request.setAttribute(key, data.get(key));
+						}
                 		RequestDispatcher requestDispatcher = request.getRequestDispatcher(modelView.getUrl());
                 		requestDispatcher.forward(request, response);
                 	}
