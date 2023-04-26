@@ -9,10 +9,7 @@
         </head>
 
         <body>
-            <p><a href="frontservlet?id=1">Click here </a>to redirect to another page</p>
-            <p>
-                <a href="frontservlet?doList=true">Click here to list all method with the annotation</a>
-            </p>
+            <p><a href="emp-getAll">Click here </a>to do test</p>
         </body>
 
         </html>
