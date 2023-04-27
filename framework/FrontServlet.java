@@ -3,10 +3,16 @@ package etu1923.framework.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -81,7 +87,7 @@ public class FrontServlet extends HttpServlet{
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {     
         	String url = request.getRequestURL().toString()+"?"+request.getQueryString();
-        	out.println("Url: "+url);   
+        	out.println("URL: "+url);   
 			String doList = "";
             if(request.getParameter("doList") != null){
                 doList = request.getParameter("doList");
@@ -97,8 +103,8 @@ public class FrontServlet extends HttpServlet{
                 if(this.getMappingUrls().containsKey(urlString)) {
                 	Mapping mapping = this.getMappingUrls().get(urlString);
                 	Class clazz = Class.forName(mapping.getClassName());
-                	Method method = clazz.getDeclaredMethod(mapping.getMethod());
                 	Object object = clazz.getConstructor().newInstance();
+                	Method method = clazz.getDeclaredMethod(mapping.getMethod());
                 	Object returnObject = method.invoke(object,(Object[])null);
                 	if(returnObject instanceof ModelView) {
                 		ModelView modelView = (ModelView) returnObject;
