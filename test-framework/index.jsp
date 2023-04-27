@@ -10,6 +10,10 @@
 
         <body>
             <p><a href="emp-getAll">Click here </a>to do test</p>
+            <form method="post" action="emp-printNom">
+                <input type="text" name="nom">
+                <input type="submit" value="Valider">
+            </form>
         </body>
 
         </html>
