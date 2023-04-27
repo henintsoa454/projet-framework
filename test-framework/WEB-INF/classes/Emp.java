@@ -55,5 +55,10 @@ public class Emp {
 		modelView.addItem("test", testData);
 		return modelView;
 	}
-	
+	@AppRoute(url = "/emp-printNom")
+	public ModelView printName(){
+		ModelView modelView = new ModelView("Veloma.jsp");
+		modelView.addItem("test",this.getNom());
+		return modelView;
+	}
 }
