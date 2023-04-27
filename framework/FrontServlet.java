@@ -55,6 +55,43 @@ public class FrontServlet extends HttpServlet{
         return classes;
     }
 	
+	public static Object castObject(Object object, Class<?> castType) {
+        try {
+            if (castType.equals(Integer.TYPE) || castType.equals(Integer.class)) {
+                return Integer.parseInt(object.toString());
+            } else if (castType.equals(Double.TYPE) || castType.equals(Double.class)) {
+                return Double.parseDouble(object.toString());
+            } else if (castType.equals(Boolean.TYPE) || castType.equals(Boolean.class)) {
+                return Boolean.parseBoolean(object.toString());
+            } else if (castType.equals(Date.class)) {
+                DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+                Date date = df.parse(object.toString());
+                return date;
+            } else if (castType.equals(Date.class)) {
+                DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+                Date utilDate = df.parse(object.toString());
+                return new java.sql.Date(utilDate.getTime());
+            } else {
+                return object;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+	
+	public static boolean checkIfExist(Enumeration<String> enumeration, Field field) {
+		for (;enumeration.hasMoreElements();) {
+			if(field.getName().compareTo(enumeration.nextElement())==0) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public static String capitalizedName(String name) {
+		return name.substring(0, 1).toUpperCase() + name.substring(1);
+	}
+	
 	@Override
 	public void init() throws ServletException {
 		 File f = null;
@@ -104,6 +141,16 @@ public class FrontServlet extends HttpServlet{
                 	Mapping mapping = this.getMappingUrls().get(urlString);
                 	Class clazz = Class.forName(mapping.getClassName());
                 	Object object = clazz.getConstructor().newInstance();
+                	Field[] fields = object.getClass().getDeclaredFields();
+                	Enumeration<String> enumeration = request.getParameterNames();
+                	for (int i = 0; i < fields.length; i++) {
+						if(checkIfExist(enumeration, fields[i])) {
+							Object attributObject = request.getParameter(fields[i].getName());
+							Object objectCast = castObject(attributObject, fields[i].getType());
+							Method method = clazz.getDeclaredMethod("set"+capitalizedName(fields[i].getName()),fields[i].getType());
+							method.invoke(object, objectCast);
+						}
+					}
                 	Method method = clazz.getDeclaredMethod(mapping.getMethod());
                 	Object returnObject = method.invoke(object,(Object[])null);
                 	if(returnObject instanceof ModelView) {
