@@ -12,14 +12,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
-
+import java.text.ParseException;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import etu1923.framework.Mapping;
 import etu1923.framework.ModelView;
 
@@ -54,34 +52,44 @@ public class FrontServlet extends HttpServlet{
         }
         return classes;
     }
-	
-	public static Object castObject(Object object, Class<?> castType) {
-        try {
-            if (castType.equals(Integer.TYPE) || castType.equals(Integer.class)) {
-                return Integer.parseInt(object.toString());
-            } else if (castType.equals(Double.TYPE) || castType.equals(Double.class)) {
-                return Double.parseDouble(object.toString());
-            } else if (castType.equals(Boolean.TYPE) || castType.equals(Boolean.class)) {
-                return Boolean.parseBoolean(object.toString());
-            } else if (castType.equals(Date.class)) {
-                DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-                Date date = df.parse(object.toString());
-                return date;
-            } else if (castType.equals(Date.class)) {
-                DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-                Date utilDate = df.parse(object.toString());
-                return new java.sql.Date(utilDate.getTime());
-            } else {
-                return object;
-            }
-        } catch (Exception e) {
-            return null;
-        }
-    }
-	
-	public static boolean checkIfExist(Enumeration<String> enumeration, Field field) {
-		for (;enumeration.hasMoreElements();) {
-			if(field.getName().compareTo(enumeration.nextElement())==0) {
+
+	public static Object cast(Object obj, Class<?> clazz) throws ParseException {
+		if (obj == null || clazz.isInstance(obj)) {
+			return obj;
+		}
+		if (clazz == int.class || clazz == Integer.class) {
+			return Integer.parseInt(obj.toString());
+		} else if (clazz == double.class || clazz == Double.class) {
+			return Double.parseDouble(obj.toString());
+		} else if (clazz == String.class) {
+			return obj.toString();
+		} else if (clazz == boolean.class || clazz == Boolean.class) {
+			return Boolean.parseBoolean(obj.toString());
+		} else if (clazz == java.util.Date.class) {
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+			try {
+				return formatter.parse(obj.toString());
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+		} else if (clazz == java.sql.Date.class) {
+			return java.sql.Date.valueOf(obj.toString());
+		}
+		return null;
+	}
+
+	public static ArrayList<String> enumerationToList(Enumeration<String> enumeration) {
+	    ArrayList<String> list = new ArrayList<String>();
+	    while (enumeration.hasMoreElements()) {
+	        list.add(enumeration.nextElement());
+	    }
+	    return list;
+	}
+
+	public static boolean checkIfExist(ArrayList<String> enumerationList, Field field){
+		for(int i = 0; i < enumerationList.size(); i++){
+			System.out.println("ENUMERATION: "+enumerationList.get(i)+" field: "+field.getName());
+			if(field.getName().compareTo(enumerationList.get(i))==0){
 				return true;
 			}
 		}
@@ -143,10 +151,14 @@ public class FrontServlet extends HttpServlet{
                 	Object object = clazz.getConstructor().newInstance();
                 	Field[] fields = object.getClass().getDeclaredFields();
                 	Enumeration<String> enumeration = request.getParameterNames();
+					ArrayList<String> enumerationList = new ArrayList<String>();
+					enumerationList = enumerationToList(enumeration);
                 	for (int i = 0; i < fields.length; i++) {
-						if(checkIfExist(enumeration, fields[i])) {
+						System.out.println("FIELD: "+fields[i].getName());
+						if(checkIfExist(enumerationList, fields[i])) {
+							System.out.println("EXIST FIELD: "+fields[i].getName());
 							Object attributObject = request.getParameter(fields[i].getName());
-							Object objectCast = castObject(attributObject, fields[i].getType());
+							Object objectCast = cast(attributObject, fields[i].getType());
 							Method method = clazz.getDeclaredMethod("set"+capitalizedName(fields[i].getName()),fields[i].getType());
 							method.invoke(object, objectCast);
 						}
