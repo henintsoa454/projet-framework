@@ -51,4 +51,11 @@ public class Emp {
 		modelView.addItem("test3",this.getAge());
 		return modelView;
 	}
+	@AppRoute(url = "/emp-HaveSon")
+	public ModelView haveSon(String nombre){
+		String result = "Le nombre d'enfant est "+nombre;
+		ModelView modelView = new ModelView("Welcome.jsp");
+		modelView.addItem("test",result);
+		return modelView;
+	}
 }
