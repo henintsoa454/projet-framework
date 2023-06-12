@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.util.Date;
 import java.text.DateFormat;
@@ -57,7 +58,7 @@ public class FrontServlet extends HttpServlet{
 		if (obj == null || clazz.isInstance(obj)) {
 			return obj;
 		}
-		if (clazz == int.class || clazz == Integer.class) {
+		if (clazz == int.class || clazz == Integer.class || clazz == Integer.TYPE) {
 			return Integer.parseInt(obj.toString());
 		} else if (clazz == double.class || clazz == Double.class) {
 			return Double.parseDouble(obj.toString());
@@ -86,10 +87,20 @@ public class FrontServlet extends HttpServlet{
 	    return list;
 	}
 
-	public static boolean checkIfExist(ArrayList<String> enumerationList, Field field){
+	public static boolean checkIfExistForField(ArrayList<String> enumerationList, Field field){
 		for(int i = 0; i < enumerationList.size(); i++){
 			System.out.println("ENUMERATION: "+enumerationList.get(i)+" field: "+field.getName());
 			if(field.getName().compareTo(enumerationList.get(i))==0){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public static boolean checkIfExistForParameter(ArrayList<String> enumerationList, Parameter parameter){
+		for(int i = 0; i < enumerationList.size(); i++){
+			System.out.println("ENUMERATION: "+enumerationList.get(i).trim()+" parameter: "+parameter.getName().trim());
+			if(parameter.getName().trim().compareTo(enumerationList.get(i).trim())==0){
 				return true;
 			}
 		}
@@ -150,12 +161,30 @@ public class FrontServlet extends HttpServlet{
                 	Class clazz = Class.forName(mapping.getClassName());
                 	Object object = clazz.getConstructor().newInstance();
                 	Field[] fields = object.getClass().getDeclaredFields();
-                	Enumeration<String> enumeration = request.getParameterNames();
+                	Method[] allMethods = object.getClass().getDeclaredMethods();
+                 	Enumeration<String> enumeration = request.getParameterNames();
 					ArrayList<String> enumerationList = new ArrayList<String>();
 					enumerationList = enumerationToList(enumeration);
+					Method equalMethod = null;
+					for (int i = 0; i < allMethods.length; i++) {
+						if(allMethods[i].getName().compareTo(mapping.getMethod())==0) {
+							equalMethod = allMethods[i];
+							break;
+						}
+					}
+					Parameter[] parameters = equalMethod.getParameters();
+					Object[] declaredParameter = new Object[parameters.length];
+					for (int i = 0; i < parameters.length; i++) {
+						if(checkIfExistForParameter(enumerationList, parameters[i])) {
+							Object parameterObject = request.getParameter(parameters[i].getName().trim());
+							parameterObject = cast(parameterObject, parameters[i].getType());
+							declaredParameter[i] = parameterObject;
+						}
+						else declaredParameter[i] = null;
+					}
                 	for (int i = 0; i < fields.length; i++) {
 						System.out.println("FIELD: "+fields[i].getName());
-						if(checkIfExist(enumerationList, fields[i])) {
+						if(checkIfExistForField(enumerationList, fields[i])) {
 							System.out.println("EXIST FIELD: "+fields[i].getName());
 							Object attributObject = request.getParameter(fields[i].getName());
 							Object objectCast = cast(attributObject, fields[i].getType());
@@ -163,8 +192,7 @@ public class FrontServlet extends HttpServlet{
 							method.invoke(object, objectCast);
 						}
 					}
-                	Method method = clazz.getDeclaredMethod(mapping.getMethod());
-                	Object returnObject = method.invoke(object,(Object[])null);
+                	Object returnObject = equalMethod.invoke(object,declaredParameter);
                 	if(returnObject instanceof ModelView) {
                 		ModelView modelView = (ModelView) returnObject;
                 		HashMap<String, Object> data = modelView.getData();
