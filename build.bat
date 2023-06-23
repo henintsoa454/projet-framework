@@ -1,28 +1,48 @@
 @echo off
 
-set "FRAMEWORK_DIR=D:\ITU\Framework\framework"
-set "TEST_FRAMEWORK_DIR=D:\ITU\Framework\test-framework"
+set "FRAMEWORK_DIR=E:\Framework\framework"
+set "TEST_FRAMEWORK_DIR=E:\Framework\test-framework"
+set "TEMPORARY_DIR=E:\Framework\temporary"
+set "TOMCAT_DIR=C:\Program Files\Apache Software Foundation\Tomcat 8.5_Tomcat8.5"
+
+del /s /q "%TEMPORARY_DIR%\*"
 
 cd "%FRAMEWORK_DIR%"
 
-javac -d . *.java
+javac -parameters -d . *.java
 
 jar cf framework.jar *
 
-cd ..
+cd "%TEMPORARY_DIR%"
 
-set "WEB_INF_DIR=%TEST_FRAMEWORK_DIR%\WEB-INF"
+mkdir "WEB-INF"
+mkdir "WEB-INF\classes"
+mkdir "WEB-INF\lib"
 
-copy "%FRAMEWORK_DIR%\framework.jar" "%WEB_INF_DIR%\lib\"
+copy /y "%FRAMEWORK_DIR%\framework.jar" "WEB-INF\lib"
 
-cd "%WEB_INF_DIR%\classes"
+xcopy /s /e /y "%TEST_FRAMEWORK_DIR%\WEB-INF\classes" "WEB-INF\classes"
 
-javac -cp "%WEB_INF_DIR%\lib\framework.jar" -d . *.java
+copy /y "%TEST_FRAMEWORK_DIR%\WEB-INF\lib\*" "WEB-INF\lib"
 
-cd "..\.."
+copy /y "%TEST_FRAMEWORK_DIR%\WEB-INF\web.xml" "WEB-INF"
 
-set "WAR_FILE=%TEST_FRAMEWORK_DIR%\frameworkTest.war"
+cd "%TEST_FRAMEWORK_DIR%"
 
-jar cf "%WAR_FILE%" .
+for %%F in (*.jsp) do (
+    copy /y "%%F" "%TEMPORARY_DIR%"
+)
 
-copy "%WAR_FILE%" "C:\Program Files\Apache Software Foundation\Tomcat 8.5\webapps"
+cd "%TEMPORARY_DIR%\WEB-INF\classes"
+
+javac -parameters -cp "../lib\servlet-api.jar;../lib\framework.jar" -d . *.java
+
+cd ../..
+
+jar cf "frameworkTest.war" *
+
+del /q "%TOMCAT_DIR%\webapps\frameworkTest\*"
+
+copy /y "frameworkTest.war" "%TOMCAT_DIR%\webapps"
+
+echo "Done."
