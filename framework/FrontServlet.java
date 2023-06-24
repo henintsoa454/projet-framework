@@ -2,6 +2,7 @@ package etu1923.framework.servlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -11,19 +12,25 @@ import java.util.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.text.ParseException;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 import etu1923.framework.Mapping;
 import etu1923.framework.ModelView;
+import etu1923.framework.fileUpload.FileUpload;
 
+@MultipartConfig
 public class FrontServlet extends HttpServlet{
 	HashMap<String, Mapping> mappingUrls;
+	HashMap<String, Object> singletons;
 	
 	public HashMap<String, Mapping> getMappingUrls() {
 		return mappingUrls;
@@ -32,7 +39,15 @@ public class FrontServlet extends HttpServlet{
 	public void setMappingUrls(HashMap<String, Mapping> mappingUrls) {
 		this.mappingUrls = mappingUrls;
 	}
-	
+		
+	public HashMap<String, Object> getSingletons() {
+		return singletons;
+	}
+
+	public void setSingletons(HashMap<String, Object> singletons) {
+		this.singletons = singletons;
+	}
+
 	public static ArrayList<Class<?>> checkClasses(File directory, String packageName) throws Exception {
         ArrayList<Class<?>> classes = new ArrayList<>();
         // if (!directory.exists()) {
@@ -110,6 +125,19 @@ public class FrontServlet extends HttpServlet{
 	public static String capitalizedName(String name) {
 		return name.substring(0, 1).toUpperCase() + name.substring(1);
 	}
+
+	public void setDefault(Object object)throws Exception{
+		Field[] fields = object.getClass().getDeclaredFields();
+		for (int i = 0; i < fields.length; i++) {
+			Method method = object.getClass().getDeclaredMethod("set"+capitalizedName(fields[i].getName()),fields[i].getType());
+			if(fields[i].getType().getName().contains("int") || fields[i].getType().getName().contains("double") || fields[i].getType().getName().contains("float")){
+				method.invoke(object, 0);
+			}else{
+				method.invoke(object, (Object)null);
+			}
+			
+		}
+	}
 	
 	@Override
 	public void init() throws ServletException {
@@ -117,6 +145,7 @@ public class FrontServlet extends HttpServlet{
 	        try{
 	            f = new File("../webapps/Framework/WEB-INF/classes/etu1923");
 	            ArrayList<Class<?>> classes = FrontServlet.checkClasses(f,"etu1923");
+	            this.setSingletons(new HashMap<>());
                 this.setMappingUrls(new HashMap<>());
 	            for(int i = 0;i<classes.size();i++){
 	                Class<?> classe = classes.get(i);
@@ -132,7 +161,13 @@ public class FrontServlet extends HttpServlet{
 	                        this.getMappingUrls().put(url,newmap);
 	                    }
 	                }
-	            } 
+	                if(classe.isAnnotationPresent(etu1923.framework.annotation.Singleton.class)) {
+						System.out.println("Class singleton: "+classe.getName());
+	                	this.getSingletons().put(classe.getName(), null);
+	                }
+	            }
+	            
+	            
 	        }
 	        catch(Exception e){
 	            e.printStackTrace();
@@ -141,7 +176,34 @@ public class FrontServlet extends HttpServlet{
 
 	protected void processRequest(HttpServletRequest request, HttpServletResponse response)throws ServletException, IOException {		
         response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {     
+		PrintWriter out = response.getWriter();
+        try {     
+        	if(request.getContentType() != null) {
+        		System.out.println(request.getContentType());
+        		ArrayList<FileUpload> allUploads = new ArrayList<FileUpload>();
+        		Collection<Part> parts = request.getParts();
+				if(parts != null){
+					for (Part part : parts) {						
+						String fileName = part.getName();
+						Part filePart = request.getPart(fileName);
+						InputStream in = filePart.getInputStream();
+						byte[] fileBytes = in.readAllBytes();
+						String directory = "./uploads/";
+						File file = new File(directory);
+						if(!file.exists()){
+							file.mkdirs();
+						}
+						System.out.println("FileName: "+fileName+" ,Directory: "+directory+" FileBytes: "+fileBytes);
+						FileUpload fileUpload = new FileUpload();
+						fileUpload.setNom(fileName);
+						fileUpload.setSavePath(directory);
+						fileUpload.setByte_tab(fileBytes);
+						allUploads.add(fileUpload);						
+					}
+				}
+				System.out.println(allUploads);
+				request.setAttribute("all_uploads", allUploads);
+        	}
         	String url = request.getRequestURL().toString()+"?"+request.getQueryString();
         	out.println("URL: "+url);   
 			String doList = "";
@@ -159,7 +221,18 @@ public class FrontServlet extends HttpServlet{
                 if(this.getMappingUrls().containsKey(urlString)) {
                 	Mapping mapping = this.getMappingUrls().get(urlString);
                 	Class clazz = Class.forName(mapping.getClassName());
-                	Object object = clazz.getConstructor().newInstance();
+                	Object object = null;
+                	if(this.getSingletons().containsKey(mapping.getClassName())) {
+                    	if(this.getSingletons().get(mapping.getClassName()) == null) {
+							System.out.println("Class insert in singletons: "+mapping.getClassName());
+                    		this.getSingletons().replace(mapping.getClassName(), null ,clazz.getConstructor().newInstance());
+                    	}
+                    	object = this.getSingletons().get(mapping.getClassName());
+						setDefault(object);
+                    }
+                	if( object == null ){
+						object = clazz.getConstructor().newInstance();
+					}
                 	Field[] fields = object.getClass().getDeclaredFields();
                 	Method[] allMethods = object.getClass().getDeclaredMethods();
                  	Enumeration<String> enumeration = request.getParameterNames();
@@ -205,7 +278,7 @@ public class FrontServlet extends HttpServlet{
                 }        
         }
         catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(out);
         }
     }
 
