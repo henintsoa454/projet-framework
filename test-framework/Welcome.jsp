@@ -1,3 +1,6 @@
+<%@ page import="java.util.ArrayList"%>
+<%@ page import="etu1923.framework.fileUpload.FileUpload"%>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,5 +12,10 @@
 <body>
     <h1>Vomay tonga!!!!!</h1>
     <p><%out.println(request.getAttribute("test"));%></p>
+    <%
+    if(request.getAttribute("all_uploads") != null){%>
+        <p><%out.println((ArrayList<FileUpload>)request.getAttribute("all_uploads"));%></p>
+    <%}
+    %>
 </body>
 </html>
