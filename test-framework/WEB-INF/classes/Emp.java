@@ -5,12 +5,15 @@ import java.time.LocalDate;
 import java.util.Calendar;
 
 import etu1923.framework.annotation.AppRoute;
+import etu1923.framework.annotation.Singleton;
 import etu1923.framework.ModelView;
 
+@Singleton()
 public class Emp {
 	String nom;
 	String prenom;
 	Date age;
+	int appel = 0;
 	
 	@AppRoute(url = "/emp-get-nom")
 	public String getNom() {
@@ -36,6 +39,14 @@ public class Emp {
 	public void setAge(Date age) {
 		this.age = age;
 	}
+	@AppRoute(url = "/emp-get-appel")
+	public int getAppel() {
+		return appel;
+	}
+	@AppRoute(url = "/emp-set-appel")
+	public void setAppel(int appel) {
+		this.appel = appel;
+	}
 	@AppRoute(url = "/emp-getAll")
 	public ModelView getAllEmp(){
 		ModelView modelView = new ModelView("TongaSoa.jsp");
@@ -56,6 +67,13 @@ public class Emp {
 		String result = "Le nombre d'enfant est "+nombre;
 		ModelView modelView = new ModelView("Welcome.jsp");
 		modelView.addItem("test",result);
+		return modelView;
+	}
+	@AppRoute(url= "/emp-Appel")
+	public ModelView appel(){
+		ModelView modelView = new ModelView("singleton.jsp");
+		this.appel = this.appel+1;
+		modelView.addItem("nbr",this.appel);
 		return modelView;
 	}
 }
