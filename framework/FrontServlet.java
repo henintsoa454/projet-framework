@@ -25,12 +25,15 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import etu1923.framework.Mapping;
 import etu1923.framework.ModelView;
+import etu1923.framework.annotation.Authentification;
 import etu1923.framework.fileUpload.FileUpload;
 
 @MultipartConfig
 public class FrontServlet extends HttpServlet{
 	HashMap<String, Mapping> mappingUrls;
 	HashMap<String, Object> singletons;
+	String connectedSession;
+	String profileSession;
 	
 	public HashMap<String, Mapping> getMappingUrls() {
 		return mappingUrls;
@@ -47,12 +50,11 @@ public class FrontServlet extends HttpServlet{
 	public void setSingletons(HashMap<String, Object> singletons) {
 		this.singletons = singletons;
 	}
+	
 
 	public static ArrayList<Class<?>> checkClasses(File directory, String packageName) throws Exception {
         ArrayList<Class<?>> classes = new ArrayList<>();
-        // if (!directory.exists()) {
-        //     return classes;
-        // }
+        
 		String path = packageName.replaceAll("[.]","/");
 		URL packageUrl = Thread.currentThread().getContextClassLoader().getResource(path);
 		directory = new File(packageUrl.toURI());
@@ -166,8 +168,8 @@ public class FrontServlet extends HttpServlet{
 	                	this.getSingletons().put(classe.getName(), null);
 	                }
 	            }
-	            
-	            
+	            this.connectedSession = getInitParameter("isConnected");
+	            this.profileSession = getInitParameter("Profile");
 	        }
 	        catch(Exception e){
 	            e.printStackTrace();
@@ -205,77 +207,87 @@ public class FrontServlet extends HttpServlet{
 				request.setAttribute("all_uploads", allUploads);
         	}
         	String url = request.getRequestURL().toString()+"?"+request.getQueryString();
-        	out.println("URL: "+url);   
-			String doList = "";
-            if(request.getParameter("doList") != null){
-                doList = request.getParameter("doList");
-            }
-                out.println(this.getMappingUrls());
-                for (String key : this.getMappingUrls().keySet()) {
-                    Mapping mapping = this.getMappingUrls().get(key);
-                    out.println("Url:"+key+" ClassName:"+mapping.getClassName()+" Method:"+mapping.getMethod());
-                }
-                
-                String urlString = request.getRequestURI().substring(request.getContextPath().length());
-                out.println("URLSTRING: "+urlString);
-                if(this.getMappingUrls().containsKey(urlString)) {
-                	Mapping mapping = this.getMappingUrls().get(urlString);
-                	Class clazz = Class.forName(mapping.getClassName());
-                	Object object = null;
-                	if(this.getSingletons().containsKey(mapping.getClassName())) {
-                    	if(this.getSingletons().get(mapping.getClassName()) == null) {
-							System.out.println("Class insert in singletons: "+mapping.getClassName());
-                    		this.getSingletons().replace(mapping.getClassName(), null ,clazz.getConstructor().newInstance());
-                    	}
-                    	object = this.getSingletons().get(mapping.getClassName());
-						setDefault(object);
-                    }
-                	if( object == null ){
-						object = clazz.getConstructor().newInstance();
-					}
-                	Field[] fields = object.getClass().getDeclaredFields();
-                	Method[] allMethods = object.getClass().getDeclaredMethods();
-                 	Enumeration<String> enumeration = request.getParameterNames();
-					ArrayList<String> enumerationList = new ArrayList<String>();
-					enumerationList = enumerationToList(enumeration);
-					Method equalMethod = null;
-					for (int i = 0; i < allMethods.length; i++) {
-						if(allMethods[i].getName().compareTo(mapping.getMethod())==0) {
-							equalMethod = allMethods[i];
-							break;
-						}
-					}
-					Parameter[] parameters = equalMethod.getParameters();
-					Object[] declaredParameter = new Object[parameters.length];
-					for (int i = 0; i < parameters.length; i++) {
-						if(checkIfExistForParameter(enumerationList, parameters[i])) {
-							Object parameterObject = request.getParameter(parameters[i].getName().trim());
-							parameterObject = cast(parameterObject, parameters[i].getType());
-							declaredParameter[i] = parameterObject;
-						}
-						else declaredParameter[i] = null;
-					}
-                	for (int i = 0; i < fields.length; i++) {
-						System.out.println("FIELD: "+fields[i].getName());
-						if(checkIfExistForField(enumerationList, fields[i])) {
-							System.out.println("EXIST FIELD: "+fields[i].getName());
-							Object attributObject = request.getParameter(fields[i].getName());
-							Object objectCast = cast(attributObject, fields[i].getType());
-							Method method = clazz.getDeclaredMethod("set"+capitalizedName(fields[i].getName()),fields[i].getType());
-							method.invoke(object, objectCast);
-						}
-					}
-                	Object returnObject = equalMethod.invoke(object,declaredParameter);
-                	if(returnObject instanceof ModelView) {
-                		ModelView modelView = (ModelView) returnObject;
-                		HashMap<String, Object> data = modelView.getData();
-                		for (String key : data.keySet()) {
-							request.setAttribute(key, data.get(key));
-						}
-                		RequestDispatcher requestDispatcher = request.getRequestDispatcher(modelView.getUrl());
-                		requestDispatcher.forward(request, response);
+        	out.println("URL: "+url);                
+            String urlString = request.getRequestURI().substring(request.getContextPath().length());
+            out.println("URLSTRING: "+urlString);
+            if(this.getMappingUrls().containsKey(urlString)) {
+            	Mapping mapping = this.getMappingUrls().get(urlString);
+            	Class clazz = Class.forName(mapping.getClassName());
+            	Object object = null;
+            	if(this.getSingletons().containsKey(mapping.getClassName())) {
+                	if(this.getSingletons().get(mapping.getClassName()) == null) {
+						System.out.println("Class insert in singletons: "+mapping.getClassName());
+                		this.getSingletons().replace(mapping.getClassName(), null ,clazz.getConstructor().newInstance());
                 	}
-                }        
+                	object = this.getSingletons().get(mapping.getClassName());
+					setDefault(object);
+                }
+            	if( object == null ){
+					object = clazz.getConstructor().newInstance();
+				}
+            	Field[] fields = object.getClass().getDeclaredFields();
+            	Method[] allMethods = object.getClass().getDeclaredMethods();
+             	Enumeration<String> enumeration = request.getParameterNames();
+				ArrayList<String> enumerationList = new ArrayList<String>();
+				enumerationList = enumerationToList(enumeration);
+				Method equalMethod = null;
+				for (int i = 0; i < allMethods.length; i++) {
+					if(allMethods[i].getName().compareTo(mapping.getMethod())==0) {
+						equalMethod = allMethods[i];
+						break;
+					}
+				}
+				if(equalMethod.isAnnotationPresent(etu1923.framework.annotation.Authentification.class)) {
+					if(request.getSession().getAttribute(this.connectedSession)!=null) {
+						Authentification authentification = equalMethod.getAnnotation(etu1923.framework.annotation.Authentification.class);
+						if(!authentification.user().isEmpty() && !authentification.user().equals(request.getSession().getAttribute(this.profileSession))) {
+							throw new Exception("Vous ne pouvez pas accéder à cet URL");
+						}
+					}
+					else {
+						throw new Exception("Aucune Session en cours");
+					}
+				}
+				Parameter[] parameters = equalMethod.getParameters();
+				Object[] declaredParameter = new Object[parameters.length];
+				for (int i = 0; i < parameters.length; i++) {
+					if(checkIfExistForParameter(enumerationList, parameters[i])) {
+						Object parameterObject = request.getParameter(parameters[i].getName().trim());
+						parameterObject = cast(parameterObject, parameters[i].getType());
+						declaredParameter[i] = parameterObject;
+					}
+					else declaredParameter[i] = null;
+				}
+            	for (int i = 0; i < fields.length; i++) {
+					System.out.println("FIELD: "+fields[i].getName());
+					if(checkIfExistForField(enumerationList, fields[i])) {
+						System.out.println("EXIST FIELD: "+fields[i].getName());
+						Object attributObject = request.getParameter(fields[i].getName());
+						Object objectCast = cast(attributObject, fields[i].getType());
+						Method method = clazz.getDeclaredMethod("set"+capitalizedName(fields[i].getName()),fields[i].getType());
+						method.invoke(object, objectCast);
+					}
+				}
+            	Object returnObject = equalMethod.invoke(object,declaredParameter);
+            	if(returnObject instanceof ModelView) {
+            		ModelView modelView = (ModelView) returnObject;
+            		HashMap<String, Object> data = modelView.getData();
+            		HashMap<String, Object> session = modelView.getSession();
+            		
+					for (String key : data.keySet()) {
+						request.setAttribute(key, data.get(key));
+					}
+
+            		for (String key : session.keySet()) {
+						request.getSession().setAttribute(key, session.get(key));
+					}
+            		RequestDispatcher requestDispatcher = request.getRequestDispatcher(modelView.getUrl());
+            		requestDispatcher.forward(request, response);
+            	}
+            } 
+            else{
+            	out.print("Cette url n'existe pas");
+            }
         }
         catch (Exception e) {
             e.printStackTrace(out);
