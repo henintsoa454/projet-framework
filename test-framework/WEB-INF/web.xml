@@ -21,14 +21,21 @@
                       http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
   version="3.1"
   metadata-complete="true"> 
-
     <servlet>
-      <servlet-name>test</servlet-name>
+      <servlet-name>frontservlet</servlet-name>
       <servlet-class>etu1923.framework.servlet.FrontServlet</servlet-class>
+      <init-param>
+        <param-name>isConnected</param-name>
+        <param-value>user</param-value>
+      </init-param>
+      <init-param>
+        <param-name>Profile</param-name>
+        <param-value>admin</param-value>
+      </init-param>
     </servlet>
 
     <servlet-mapping>
-        <servlet-name>test</servlet-name>
-        <url-pattern>/test</url-pattern>
+        <servlet-name>frontservlet</servlet-name>
+        <url-pattern>/</url-pattern>
     </servlet-mapping>
 </web-app>

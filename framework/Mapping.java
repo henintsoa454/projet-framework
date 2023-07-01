@@ -16,12 +16,14 @@ public class Mapping {
 		this.method = method;
 	}
 	
+	public Mapping(String className,String method) {
+		this.setClassName(className);
+		this.setMethod(method);
+	}
+	
 	public Mapping() {
 		
 	}
 	
-	public Mapping(String className,String Method) {
-		this.setClassName(className);
-		this.setMethod(Method);
-	}
+	
 }
