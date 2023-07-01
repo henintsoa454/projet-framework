@@ -6,6 +6,7 @@ import java.util.Calendar;
 
 import etu1923.framework.annotation.AppRoute;
 import etu1923.framework.annotation.Singleton;
+import etu1923.framework.annotation.Authentification;
 import etu1923.framework.ModelView;
 
 @Singleton()
@@ -69,11 +70,20 @@ public class Emp {
 		modelView.addItem("test",result);
 		return modelView;
 	}
+	@Authentification(user="henintsoa")
 	@AppRoute(url= "/emp-Appel")
 	public ModelView appel(){
 		ModelView modelView = new ModelView("singleton.jsp");
 		this.appel = this.appel+1;
 		modelView.addItem("nbr",this.appel);
+		return modelView;
+	}
+
+	@AppRoute(url= "/emp-Login")
+	public ModelView login(){
+		ModelView modelView = new ModelView("index.jsp");
+		modelView.addSession("user", "henintsoa");
+		modelView.addSession("admin", "henintsoa");
 		return modelView;
 	}
 }
