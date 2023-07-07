@@ -1,9 +1,7 @@
 package etu1923.framework.entity;
 
 import java.sql.Date;
-import java.time.LocalDate;
-import java.util.Calendar;
-
+import java.util.HashMap;
 import etu1923.framework.annotation.AppRoute;
 import etu1923.framework.annotation.Singleton;
 import etu1923.framework.annotation.Authentification;
@@ -11,10 +9,19 @@ import etu1923.framework.ModelView;
 
 @Singleton()
 public class Emp {
+	HashMap<String,Object> session;
 	String nom;
 	String prenom;
 	Date age;
 	int appel = 0;
+
+	public HashMap<String,Object> getSession(){
+		return this.session;
+	}
+
+	public void setSession(HashMap<String,Object> session){
+		this.session = session;
+	}
 	
 	@AppRoute(url = "/emp-get-nom")
 	public String getNom() {
