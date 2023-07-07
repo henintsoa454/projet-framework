@@ -281,20 +281,15 @@ public class FrontServlet extends HttpServlet{
 				}
             	Object returnObject = equalMethod.invoke(object,declaredParameter);
             	if(returnObject instanceof ModelView) {
-					if(equalMethod.isAnnotationPresent(etu1923.framework.annotation.Session.class)) {
-						Method method = clazz.getDeclaredMethod("get"+capitalizedName("session"));
-						HashMap<String,Object> sessionData = (HashMap<String,Object>)method.invoke(object);
-						for (String key : sessionData.keySet()) {
-							request.setAttribute(key, sessionData.get(key));
-						}
-					}
-
-
             		ModelView modelView = (ModelView) returnObject;
             		if(modelView.isJSON()) {
             			response.setContentType("application/json");
             			out.print(new Gson().toJson(modelView.getData()));
 					}
+					else if(equalMethod.isAnnotationPresent(etu1923.framework.annotation.APIRest.class)) {
+            			response.setContentType("application/json");
+            			out.print(new Gson().toJson(modelView));
+            		}
             		else {
             			if(modelView.isInvalidateSession()) {
                 			request.getSession().invalidate();
