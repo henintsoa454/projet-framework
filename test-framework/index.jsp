@@ -11,7 +11,7 @@
 <body>
     <p><a href="emp-HaveSon?nombre=2">Click here </a>to do test</p>
     <p><a href="emp-Appel">Click here </a>to do singleton test</p>
-    <form method="post" action="emp-printNom">
+    <form method="post" action="emp-printNom" enctype="multipart/form-data">
         <input type="text" name="nom">
         <input type="text" name="prenom">
         <input type="date" name="age">
