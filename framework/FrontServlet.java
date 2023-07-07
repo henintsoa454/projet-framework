@@ -1,5 +1,4 @@
 package etu1923.framework.servlet;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -281,27 +280,22 @@ public class FrontServlet extends HttpServlet{
 				}
             	Object returnObject = equalMethod.invoke(object,declaredParameter);
             	if(returnObject instanceof ModelView) {
-					if(equalMethod.isAnnotationPresent(etu1923.framework.annotation.Session.class)) {
-						Method method = clazz.getDeclaredMethod("get"+capitalizedName("session"));
-						HashMap<String,Object> sessionData = (HashMap<String,Object>)method.invoke(object);
-						for (String key : sessionData.keySet()) {
-							request.setAttribute(key, sessionData.get(key));
-						}
-					}
-
-
             		ModelView modelView = (ModelView) returnObject;
             		if(modelView.isJSON()) {
             			response.setContentType("application/json");
             			out.print(new Gson().toJson(modelView.getData()));
-					}
+            		}
+            		else if(equalMethod.isAnnotationPresent(etu1923.framework.annotation.APIRest.class)) {
+            			response.setContentType("application/json");
+            			out.print(new Gson().toJson(modelView));
+            		}
             		else {
             			if(modelView.isInvalidateSession()) {
                 			request.getSession().invalidate();
                 		}
-                		if(!modelView.getListSession().isEmpty()) {
-                			for (int i = 0; i < modelView.getListSession().size(); i++) {
-                				request.getSession().removeAttribute(modelView.getListSession().get(i));
+                		if(!modelView.getListSessionToDelete().isEmpty()) {
+                			for (int i = 0; i < modelView.getListSessionToDelete().size(); i++) {
+                				request.getSession().removeAttribute(modelView.getListSessionToDelete().get(i));
     						}
                 		}
                 		HashMap<String, Object> data = modelView.getData();
