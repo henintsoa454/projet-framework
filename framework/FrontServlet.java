@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+import com.google.gson.Gson;
 import etu1923.framework.Mapping;
 import etu1923.framework.ModelView;
 import etu1923.framework.annotation.Authentification;
@@ -248,6 +249,16 @@ public class FrontServlet extends HttpServlet{
 						throw new Exception("Aucune Session en cours");
 					}
 				}
+				HashMap<String, Object> httpDATA = new HashMap<>();
+				if(equalMethod.isAnnotationPresent(etu1923.framework.annotation.Session.class)) {
+					Enumeration<String> attributeNames = request.getSession().getAttributeNames();
+					while(attributeNames.hasMoreElements()){
+						String attribute = attributeNames.nextElement();
+						httpDATA.put(attribute, request.getSession().getAttribute(attribute));
+					}
+					Method method = clazz.getDeclaredMethod("set"+capitalizedName("session"),HashMap.class);
+					method.invoke(object,httpDATA);
+				}
 				Parameter[] parameters = equalMethod.getParameters();
 				Object[] declaredParameter = new Object[parameters.length];
 				for (int i = 0; i < parameters.length; i++) {
@@ -266,23 +277,35 @@ public class FrontServlet extends HttpServlet{
 						Object objectCast = cast(attributObject, fields[i].getType());
 						Method method = clazz.getDeclaredMethod("set"+capitalizedName(fields[i].getName()),fields[i].getType());
 						method.invoke(object, objectCast);
-					}
+					}					
 				}
             	Object returnObject = equalMethod.invoke(object,declaredParameter);
             	if(returnObject instanceof ModelView) {
             		ModelView modelView = (ModelView) returnObject;
-            		HashMap<String, Object> data = modelView.getData();
-            		HashMap<String, Object> session = modelView.getSession();
-            		
-					for (String key : data.keySet()) {
-						request.setAttribute(key, data.get(key));
+            		if(modelView.isJSON()) {
+            			response.setContentType("application/json");
+            			out.print(new Gson().toJson(modelView.getData()));
 					}
-
-            		for (String key : session.keySet()) {
-						request.getSession().setAttribute(key, session.get(key));
-					}
-            		RequestDispatcher requestDispatcher = request.getRequestDispatcher(modelView.getUrl());
-            		requestDispatcher.forward(request, response);
+            		else {
+            			if(modelView.isInvalidateSession()) {
+                			request.getSession().invalidate();
+                		}
+                		if(!modelView.getListSession().isEmpty()) {
+                			for (int i = 0; i < modelView.getListSession().size(); i++) {
+                				request.getSession().removeAttribute(modelView.getListSession().get(i));
+    						}
+                		}
+                		HashMap<String, Object> data = modelView.getData();
+                		HashMap<String, Object> session = modelView.getSession();
+                		for (String key : data.keySet()) {
+    						request.setAttribute(key, data.get(key));
+    					}
+                		for (String key : session.keySet()) {
+    						request.getSession().setAttribute(key, session.get(key));
+    					}
+                		RequestDispatcher requestDispatcher = request.getRequestDispatcher(modelView.getUrl());
+                		requestDispatcher.forward(request, response);
+            		}
             	}
             } 
             else{
