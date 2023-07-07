@@ -1,5 +1,4 @@
 package etu1923.framework.servlet;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -285,8 +284,8 @@ public class FrontServlet extends HttpServlet{
             		if(modelView.isJSON()) {
             			response.setContentType("application/json");
             			out.print(new Gson().toJson(modelView.getData()));
-					}
-					else if(equalMethod.isAnnotationPresent(etu1923.framework.annotation.APIRest.class)) {
+            		}
+            		else if(equalMethod.isAnnotationPresent(etu1923.framework.annotation.APIRest.class)) {
             			response.setContentType("application/json");
             			out.print(new Gson().toJson(modelView));
             		}
@@ -294,9 +293,9 @@ public class FrontServlet extends HttpServlet{
             			if(modelView.isInvalidateSession()) {
                 			request.getSession().invalidate();
                 		}
-                		if(!modelView.getListSession().isEmpty()) {
-                			for (int i = 0; i < modelView.getListSession().size(); i++) {
-                				request.getSession().removeAttribute(modelView.getListSession().get(i));
+                		if(!modelView.getListSessionToDelete().isEmpty()) {
+                			for (int i = 0; i < modelView.getListSessionToDelete().size(); i++) {
+                				request.getSession().removeAttribute(modelView.getListSessionToDelete().get(i));
     						}
                 		}
                 		HashMap<String, Object> data = modelView.getData();

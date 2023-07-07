@@ -1,13 +1,17 @@
 package etu1923.framework;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class ModelView {
 	String url;
 	HashMap<String,Object> data;
 	HashMap<String, Object> session;
 	boolean isJSON = false;
-	
+	boolean invalidateSession = false;
+	ArrayList<String> listSessionToDelete;	
+
 	public String getUrl() {
 		return url;
 	}
@@ -40,21 +44,40 @@ public class ModelView {
 		this.isJSON = isJSON;
 	}
 
+	public boolean isInvalidateSession() {
+		return invalidateSession;
+	}
+
+	public void setInvalidateSession(boolean invalidateSession) {
+		this.invalidateSession = invalidateSession;
+	}
+
+	public List<String> getListSessionToDelete() {
+		return listSessionToDelete;
+	}
+
+	public void setListSessionToDelete(ArrayList<String> listSessionToDelete) {
+		this.listSessionToDelete = listSessionToDelete;
+	}
+
 	public ModelView() {
 		this.setData(new HashMap<>());
 		this.setSession(new HashMap<>());
+		this.setListSessionToDelete(new ArrayList<String>());
 	}
 	
 	public ModelView(String url) {
 		this.setUrl(url);
 		this.setData(new HashMap<>());
 		this.setSession(new HashMap<>());
+		this.setListSessionToDelete(new ArrayList<String>());
 	}
 	
 	public ModelView(String url,HashMap<String,Object> data) {
 		this.setUrl(url);
 		this.setData(new HashMap<>());
 		this.setSession(new HashMap<>());
+		this.setListSessionToDelete(new ArrayList<String>());
 		this.setData(data);
 	}
 	
@@ -65,8 +88,6 @@ public class ModelView {
 	}
 	
 	public void addSession(String key,Object value) {
-		// if(!this.getSession().containsKey(key)) {
-			this.getSession().put(key, value);
-		// }
+		this.getSession().put(key, value);
 	}
 }
