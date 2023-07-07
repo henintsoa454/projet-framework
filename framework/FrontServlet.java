@@ -248,6 +248,16 @@ public class FrontServlet extends HttpServlet{
 						throw new Exception("Aucune Session en cours");
 					}
 				}
+				HashMap<String, Object> httpDATA = new HashMap<>();
+				if(equalMethod.isAnnotationPresent(etu1923.framework.annotation.Session.class)) {
+					Enumeration<String> attributeNames = request.getSession().getAttributeNames();
+					while(attributeNames.hasMoreElements()){
+						String attribute = attributeNames.nextElement();
+						httpDATA.put(attribute, request.getSession().getAttribute(attribute));
+					}
+					Method method = clazz.getDeclaredMethod("set"+capitalizedName("session"),HashMap.class);
+					method.invoke(object,httpDATA);
+				}
 				Parameter[] parameters = equalMethod.getParameters();
 				Object[] declaredParameter = new Object[parameters.length];
 				for (int i = 0; i < parameters.length; i++) {
@@ -266,10 +276,19 @@ public class FrontServlet extends HttpServlet{
 						Object objectCast = cast(attributObject, fields[i].getType());
 						Method method = clazz.getDeclaredMethod("set"+capitalizedName(fields[i].getName()),fields[i].getType());
 						method.invoke(object, objectCast);
-					}
+					}					
 				}
             	Object returnObject = equalMethod.invoke(object,declaredParameter);
             	if(returnObject instanceof ModelView) {
+					if(equalMethod.isAnnotationPresent(etu1923.framework.annotation.Session.class)) {
+						Method method = clazz.getDeclaredMethod("get"+capitalizedName("session"));
+						HashMap<String,Object> sessionData = (HashMap<String,Object>)method.invoke(object);
+						for (String key : sessionData.keySet()) {
+							request.setAttribute(key, sessionData.get(key));
+						}
+					}
+
+
             		ModelView modelView = (ModelView) returnObject;
             		HashMap<String, Object> data = modelView.getData();
             		HashMap<String, Object> session = modelView.getSession();
