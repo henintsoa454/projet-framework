@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+import com.google.gson.Gson;
 import etu1923.framework.Mapping;
 import etu1923.framework.ModelView;
 import etu1923.framework.annotation.Authentification;
@@ -290,18 +291,30 @@ public class FrontServlet extends HttpServlet{
 
 
             		ModelView modelView = (ModelView) returnObject;
-            		HashMap<String, Object> data = modelView.getData();
-            		HashMap<String, Object> session = modelView.getSession();
-            		
-					for (String key : data.keySet()) {
-						request.setAttribute(key, data.get(key));
+            		if(modelView.isJSON()) {
+            			response.setContentType("application/json");
+            			out.print(new Gson().toJson(modelView.getData()));
 					}
-
-            		for (String key : session.keySet()) {
-						request.getSession().setAttribute(key, session.get(key));
-					}
-            		RequestDispatcher requestDispatcher = request.getRequestDispatcher(modelView.getUrl());
-            		requestDispatcher.forward(request, response);
+            		else {
+            			if(modelView.isInvalidateSession()) {
+                			request.getSession().invalidate();
+                		}
+                		if(!modelView.getListSession().isEmpty()) {
+                			for (int i = 0; i < modelView.getListSession().size(); i++) {
+                				request.getSession().removeAttribute(modelView.getListSession().get(i));
+    						}
+                		}
+                		HashMap<String, Object> data = modelView.getData();
+                		HashMap<String, Object> session = modelView.getSession();
+                		for (String key : data.keySet()) {
+    						request.setAttribute(key, data.get(key));
+    					}
+                		for (String key : session.keySet()) {
+    						request.getSession().setAttribute(key, session.get(key));
+    					}
+                		RequestDispatcher requestDispatcher = request.getRequestDispatcher(modelView.getUrl());
+                		requestDispatcher.forward(request, response);
+            		}
             	}
             } 
             else{
